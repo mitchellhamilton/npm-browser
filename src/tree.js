@@ -1,21 +1,10 @@
-import React, { useMemo, useLayoutEffect, useState } from "react";
+import React, { useLayoutEffect, useState } from "react";
 import AKTree, { mutateTree } from "@atlaskit/tree";
-import ChevronDownIcon from "@atlaskit/icon/glyph/chevron-down";
-import ChevronRightIcon from "@atlaskit/icon/glyph/chevron-right";
 import { Link } from "react-router-dom";
 import { unstable_createResource } from "react-cache";
 import * as path from "path";
 
 console.log(path);
-
-// const Dot = styled.span`
-//   display: flex;
-//   width: 24px;
-//   height: 32px;
-//   justify-content: center;
-//   font-size: 12px;
-//   line-height: 32px;
-// `;
 
 function setItems(items, data) {
   items[data.path] = {
