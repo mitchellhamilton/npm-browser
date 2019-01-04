@@ -9,7 +9,6 @@ import npa from "npm-package-arg";
 import { jsx } from "@emotion/core";
 import { maxSatisfying } from "semver";
 import FileTree from "./tree";
-import { Grid, Item } from "./grid";
 import "./styles.css";
 
 let fileResource = unstable_createResource(file => {
@@ -59,9 +58,7 @@ function Package({ pkg }) {
           <FileTree pkg={getStuff(pkg).name} />
         </div>
         <div css={{ flex: 3 }}>
-          <Suspense fallback="Loading...">
-            <File pkg={pkg} />
-          </Suspense>
+          <Suspense fallback="Loading...">{pkg && <File pkg={pkg} />}</Suspense>
         </div>
       </div>
     </Suspense>
@@ -143,44 +140,52 @@ function App() {
       <Route path="/:package*">
         {({ match, history }) => {
           return (
-            <Grid>
-              <Item>
-                <AsyncSelect
-                  css={{ flex: 3 }}
-                  value={
-                    match && {
-                      value: getStuff(match.params.package).name,
-                      label: getStuff(match.params.package).name
-                    }
+            <div
+              css={{
+                display: "grid",
+                gridTemplateColumns: "2fr 1fr",
+                gridGap: 8
+              }}
+            >
+              <AsyncSelect
+                css={{ flex: 3 }}
+                value={
+                  match.params.package && {
+                    value: getStuff(match.params.package).name,
+                    label: getStuff(match.params.package).name
                   }
-                  onChange={val => {
-                    history.push(`/${val.value}`);
-                  }}
-                  placeholder="Search for a package"
-                  loadOptions={value => {
-                    return fetch(
-                      `https://api.npms.io/v2/search/suggestions?q=${encodeURIComponent(
-                        value
-                      )}`
-                    )
-                      .then(x => x.json())
-                      .then(x => {
-                        return x.map(x => ({
-                          value: x.package.name,
-                          label: x.package.name
-                        }));
-                      });
-                  }}
-                />
-              </Item>
-              <Item>
-                <Suspense
-                  fallback={<Select options={[]} isDisabled isLoading />}
-                >
+                }
+                onChange={val => {
+                  history.push(`/${val.value}`);
+                }}
+                placeholder="Search for a package..."
+                loadOptions={value => {
+                  return fetch(
+                    `https://api.npms.io/v2/search/suggestions?q=${encodeURIComponent(
+                      value
+                    )}`
+                  )
+                    .then(x => x.json())
+                    .then(x => {
+                      return x.map(x => ({
+                        value: x.package.name,
+                        label: x.package.name
+                      }));
+                    });
+                }}
+              />
+              <Suspense fallback={<Select options={[]} isDisabled isLoading />}>
+                {match.params.package ? (
                   <VersionSelect pkg={match.params.package} />
-                </Suspense>
-              </Item>
-            </Grid>
+                ) : (
+                  <Select
+                    options={[]}
+                    isDisabled
+                    placeholder="Select a version..."
+                  />
+                )}
+              </Suspense>
+            </div>
           );
         }}
       </Route>
@@ -191,7 +196,7 @@ function App() {
             params: { package: pkg }
           }
         }) => {
-          return <Package pkg={pkg} />;
+          return pkg ? <Package pkg={pkg} /> : null;
         }}
       />
     </div>
