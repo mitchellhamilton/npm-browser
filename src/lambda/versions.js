@@ -1,7 +1,7 @@
 let getVersions = require("npm-package-versions");
 
 export async function handler(event) {
-  let pkg = event.path.replace("/.netlify/functions/versions/", "");
+  let pkg = event.path.replace("/versions/", "");
 
   return new Promise(resolve => {
     getVersions(pkg, (err, body) => {

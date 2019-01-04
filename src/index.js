@@ -1,9 +1,15 @@
 import { Suspense } from "react";
 import ReactDOM from "react-dom";
-import { BrowserRouter, Route } from "react-router-dom";
-import { Async as AsyncSelect } from "react-select";
+import {
+  BrowserRouter,
+  Route,
+  Redirect,
+  __RouterContext
+} from "react-router-dom";
+import Select, { Async as AsyncSelect } from "react-select";
 import { unstable_createResource } from "react-cache";
 import Highlight, { defaultProps } from "prism-react-renderer";
+import npa from "npm-package-arg";
 /** @jsx jsx */
 import { jsx } from "@emotion/core";
 import FileTree from "./tree";
@@ -70,9 +76,60 @@ function getStuff(match) {
 
   let split = match.split("/");
 
-  let pkgName = isScoped ? `${split.shift()}/${split.shift()}` : split.shift();
-  return { name: pkgName, path: split.join("/") };
+  let arg = isScoped ? `${split.shift()}/${split.shift()}` : split.shift();
+  let stuff = npa(arg);
+
+  return {
+    name: stuff.name,
+    type: stuff.type,
+    spec: stuff.rawSpec,
+    path: split.join("/")
+  };
 }
+
+let versionsResource = unstable_createResource(pkg => {
+  return fetch(`/.netlify/functions/versions/${pkg}`)
+    .then(x => x.json())
+    .then(x => {
+      return x.map(version => ({ label: version, value: version }));
+    });
+});
+let tagsResource = unstable_createResource(pkg => {
+  return fetch(`/.netlify/functions/tags/${pkg}`).then(x => x.json());
+});
+
+function VersionSelect({ pkg }) {
+  let { type, spec, name, path } = getStuff(pkg);
+  if (type === "tag") {
+    let tags = tagsResource.read(name);
+    if (spec === "") {
+      spec = "latest";
+    }
+    if (spec in tags) {
+      return <Redirect to={`/package/${name}@${tags[spec]}/${path}`} />;
+    }
+    throw new ReadableError("Unknown tag: " + spec);
+  } else if (type !== "version") {
+    throw new ReadableError("Cannot handle spec type of " + type);
+  }
+  let versions = pkg ? versionsResource.read(name) : [];
+  return (
+    <Route>
+      {({ history }) => (
+        <Select
+          css={{ flex: 2 }}
+          onChange={({ value }) => {
+            history.push(`/package/${name}@${value}/${path}`);
+          }}
+          value={{ value: spec, label: spec }}
+          options={versions}
+        />
+      )}
+    </Route>
+  );
+}
+
+class ReadableError extends Error {}
 
 function App() {
   return (
@@ -80,32 +137,42 @@ function App() {
       <Route path="/package/:package*">
         {({ match, history }) => {
           return (
-            <AsyncSelect
-              value={
-                match && {
-                  value: getStuff(match.params.package).name,
-                  label: getStuff(match.params.package).name
+            <div css={{ display: "flex", width: "100%" }}>
+              <AsyncSelect
+                css={{ flex: 3 }}
+                value={
+                  match && {
+                    value: getStuff(match.params.package).name,
+                    label: getStuff(match.params.package).name
+                  }
                 }
-              }
-              onChange={val => {
-                history.push(`/package/${val.value}`);
-              }}
-              placeholder="Search for a package"
-              loadOptions={value => {
-                return fetch(
-                  `https://api.npms.io/v2/search/suggestions?q=${encodeURIComponent(
-                    value
-                  )}`
-                )
-                  .then(x => x.json())
-                  .then(x => {
-                    return x.map(x => ({
-                      value: x.package.name,
-                      label: x.package.name
-                    }));
-                  });
-              }}
-            />
+                onChange={val => {
+                  history.push(`/package/${val.value}`);
+                }}
+                placeholder="Search for a package"
+                loadOptions={value => {
+                  return fetch(
+                    `https://api.npms.io/v2/search/suggestions?q=${encodeURIComponent(
+                      value
+                    )}`
+                  )
+                    .then(x => x.json())
+                    .then(x => {
+                      return x.map(x => ({
+                        value: x.package.name,
+                        label: x.package.name
+                      }));
+                    });
+                }}
+              />
+              <Suspense
+                fallback={
+                  <Select css={{ flex: 2 }} options={[]} isDisabled isLoading />
+                }
+              >
+                <VersionSelect pkg={match.params.package} />
+              </Suspense>
+            </div>
           );
         }}
       </Route>
