@@ -9,6 +9,7 @@ import npa from "npm-package-arg";
 import { jsx } from "@emotion/core";
 import { maxSatisfying } from "semver";
 import FileTree from "./tree";
+import { Grid, Item } from "./grid";
 import "./styles.css";
 
 let fileResource = unstable_createResource(file => {
@@ -18,8 +19,8 @@ let fileResource = unstable_createResource(file => {
 let languages = {
   js: "jsx",
   jsx: "jsx",
-  ts: "tsx",
-  tsx: "tsx",
+  ts: "typescript",
+  tsx: "typescript",
   md: "markdown",
   json: "json"
 };
@@ -142,42 +143,44 @@ function App() {
       <Route path="/:package*">
         {({ match, history }) => {
           return (
-            <div css={{ display: "flex", width: "100%" }}>
-              <AsyncSelect
-                css={{ flex: 3 }}
-                value={
-                  match && {
-                    value: getStuff(match.params.package).name,
-                    label: getStuff(match.params.package).name
+            <Grid>
+              <Item>
+                <AsyncSelect
+                  css={{ flex: 3 }}
+                  value={
+                    match && {
+                      value: getStuff(match.params.package).name,
+                      label: getStuff(match.params.package).name
+                    }
                   }
-                }
-                onChange={val => {
-                  history.push(`/${val.value}`);
-                }}
-                placeholder="Search for a package"
-                loadOptions={value => {
-                  return fetch(
-                    `https://api.npms.io/v2/search/suggestions?q=${encodeURIComponent(
-                      value
-                    )}`
-                  )
-                    .then(x => x.json())
-                    .then(x => {
-                      return x.map(x => ({
-                        value: x.package.name,
-                        label: x.package.name
-                      }));
-                    });
-                }}
-              />
-              <Suspense
-                fallback={
-                  <Select css={{ flex: 2 }} options={[]} isDisabled isLoading />
-                }
-              >
-                <VersionSelect pkg={match.params.package} />
-              </Suspense>
-            </div>
+                  onChange={val => {
+                    history.push(`/${val.value}`);
+                  }}
+                  placeholder="Search for a package"
+                  loadOptions={value => {
+                    return fetch(
+                      `https://api.npms.io/v2/search/suggestions?q=${encodeURIComponent(
+                        value
+                      )}`
+                    )
+                      .then(x => x.json())
+                      .then(x => {
+                        return x.map(x => ({
+                          value: x.package.name,
+                          label: x.package.name
+                        }));
+                      });
+                  }}
+                />
+              </Item>
+              <Item>
+                <Suspense
+                  fallback={<Select options={[]} isDisabled isLoading />}
+                >
+                  <VersionSelect pkg={match.params.package} />
+                </Suspense>
+              </Item>
+            </Grid>
           );
         }}
       </Route>
