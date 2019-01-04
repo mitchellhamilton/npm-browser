@@ -1,17 +1,13 @@
 import { Suspense } from "react";
 import ReactDOM from "react-dom";
-import {
-  BrowserRouter,
-  Route,
-  Redirect,
-  __RouterContext
-} from "react-router-dom";
+import { BrowserRouter, Route, Redirect } from "react-router-dom";
 import Select, { Async as AsyncSelect } from "react-select";
 import { unstable_createResource } from "react-cache";
 import Highlight, { defaultProps } from "prism-react-renderer";
 import npa from "npm-package-arg";
 /** @jsx jsx */
 import { jsx } from "@emotion/core";
+import { maxSatisfying } from "semver";
 import FileTree from "./tree";
 import "./styles.css";
 
@@ -72,6 +68,7 @@ function Package({ pkg }) {
 }
 
 function getStuff(match) {
+  match = decodeURIComponent(match);
   let isScoped = match.startsWith("@");
 
   let split = match.split("/");
@@ -88,15 +85,15 @@ function getStuff(match) {
 }
 
 let versionsResource = unstable_createResource(pkg => {
-  return fetch(`/.netlify/functions/versions/${pkg}`)
-    .then(x => x.json())
-    .then(x => {
-      return x.map(version => ({ label: version, value: version }));
-    });
+  return fetch(`/.netlify/functions/versions/${pkg}`).then(x => x.json());
 });
 let tagsResource = unstable_createResource(pkg => {
   return fetch(`/.netlify/functions/tags/${pkg}`).then(x => x.json());
 });
+
+function makeLink({ name, version, path }) {
+  return `/package/${name}@${version}/${path}`;
+}
 
 function VersionSelect({ pkg }) {
   let { type, spec, name, path } = getStuff(pkg);
@@ -106,9 +103,14 @@ function VersionSelect({ pkg }) {
       spec = "latest";
     }
     if (spec in tags) {
-      return <Redirect to={`/package/${name}@${tags[spec]}/${path}`} />;
+      return <Redirect to={makeLink({ name, version: tags[spec], path })} />;
     }
     throw new ReadableError("Unknown tag: " + spec);
+  } else if (type === "range") {
+    let versions = versionsResource.read(name);
+    let version = maxSatisfying(versions, spec);
+
+    return <Redirect to={makeLink({ name, version, path })} />;
   } else if (type !== "version") {
     throw new ReadableError("Cannot handle spec type of " + type);
   }
@@ -122,7 +124,10 @@ function VersionSelect({ pkg }) {
             history.push(`/package/${name}@${value}/${path}`);
           }}
           value={{ value: spec, label: spec }}
-          options={versions}
+          options={versions.map(version => ({
+            label: version,
+            value: version
+          }))}
         />
       )}
     </Route>
