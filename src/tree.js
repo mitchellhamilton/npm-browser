@@ -64,9 +64,7 @@ let Tree = ({ pkg }) => {
         }
         return (
           <div ref={provided.innerRef} {...provided.draggableProps}>
-            <Link to={`/package/${pkg}${item.id}`}>
-              {path.basename(item.id)}
-            </Link>
+            <Link to={`/${pkg}${item.id}`}>{path.basename(item.id)}</Link>
           </div>
         );
       }}

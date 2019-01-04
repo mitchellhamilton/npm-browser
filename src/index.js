@@ -92,7 +92,7 @@ let tagsResource = unstable_createResource(pkg => {
 });
 
 function makeLink({ name, version, path }) {
-  return `/package/${name}@${version}/${path}`;
+  return `/${name}@${version}/${path}`;
 }
 
 function VersionSelect({ pkg }) {
@@ -121,7 +121,7 @@ function VersionSelect({ pkg }) {
         <Select
           css={{ flex: 2 }}
           onChange={({ value }) => {
-            history.push(`/package/${name}@${value}/${path}`);
+            history.push(`/${name}@${value}/${path}`);
           }}
           value={{ value: spec, label: spec }}
           options={versions.map(version => ({
@@ -139,7 +139,7 @@ class ReadableError extends Error {}
 function App() {
   return (
     <div>
-      <Route path="/package/:package*">
+      <Route path="/:package*">
         {({ match, history }) => {
           return (
             <div css={{ display: "flex", width: "100%" }}>
@@ -152,7 +152,7 @@ function App() {
                   }
                 }
                 onChange={val => {
-                  history.push(`/package/${val.value}`);
+                  history.push(`/${val.value}`);
                 }}
                 placeholder="Search for a package"
                 loadOptions={value => {
@@ -182,7 +182,7 @@ function App() {
         }}
       </Route>
       <Route
-        path="/package/:package*"
+        path="/:package*"
         render={({
           match: {
             params: { package: pkg }
