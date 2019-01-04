@@ -4,8 +4,6 @@ import { Link } from "react-router-dom";
 import { unstable_createResource } from "react-cache";
 import * as path from "path";
 
-console.log(path);
-
 function setItems(items, data) {
   items[data.path] = {
     id: data.path,
