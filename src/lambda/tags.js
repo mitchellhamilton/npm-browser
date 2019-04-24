@@ -5,6 +5,7 @@ export async function handler(event) {
   return new Promise(resolve => {
     https.get(url, function(res) {
       if (res.statusCode !== 200) {
+        console.log(res.statusCode, url);
         res.destroy();
         resolve({ statusCode: 400, body: "Something went wrong" });
         return;
