@@ -1,7 +1,7 @@
 let https = require("https");
 
 export async function handler(event) {
-  let url = "https://registry.npmjs.org/" + event.path.replace("/tags/", "");
+  let url = "https://registry.npmjs.org/" + event.path.replace("/tags", "");
   return new Promise(resolve => {
     https.get(url, function(res) {
       if (res.statusCode !== 200) {
