@@ -1,7 +1,7 @@
 let getVersions = require("npm-package-versions");
 
 export async function handler(event) {
-  let pkg = event.path.match(/[^/]+$/)[0];
+  let pkg = event.path.match(/([^/]+$|@[^/]+\/[^/]+)/)[0];
 
   return new Promise(resolve => {
     getVersions(pkg, (err, body) => {

@@ -1,7 +1,9 @@
 let https = require("https");
 
 export async function handler(event) {
-  let url = "https://registry.npmjs.org/" + event.path.match(/[^/]+$/)[0];
+  let url =
+    "https://registry.npmjs.org/" +
+    event.path.match(/([^/]+$|@[^/]+\/[^/]+)/)[0];
   return new Promise(resolve => {
     https.get(url, function(res) {
       if (res.statusCode !== 200) {
